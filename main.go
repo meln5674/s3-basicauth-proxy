@@ -9,11 +9,11 @@ import (
 	_ "github.com/aws/aws-sdk-go/aws/request"
 	awssession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"io"
 	"net/http"
 	"os"
 	"regexp"
 	"time"
-	"io"
 )
 
 const (
@@ -33,9 +33,9 @@ const (
 
 var (
 	servicePathPattern            = regexp.MustCompile(ExactRegexp(servicePathPatternStr + optionalTrailingSlashPatternStr))
-	bucketPathPattern              = regexp.MustCompile(ExactRegexp(bucketPathPatternStr + optionalTrailingSlashPatternStr))
-	objectPathPattern               = regexp.MustCompile(ExactRegexp(objectPathPatternStr))
-	objectDirPathPattern            = regexp.MustCompile(ExactRegexp(objectDirPathPatternStr))
+	bucketPathPattern             = regexp.MustCompile(ExactRegexp(bucketPathPatternStr + optionalTrailingSlashPatternStr))
+	objectPathPattern             = regexp.MustCompile(ExactRegexp(objectPathPatternStr))
+	objectDirPathPattern          = regexp.MustCompile(ExactRegexp(objectDirPathPatternStr))
 	servicePathEndpointGroupIndex = servicePathPattern.SubexpIndex(endpointGroupLabel)
 	servicePathRegionGroupIndex   = servicePathPattern.SubexpIndex(regionGroupLabel)
 
@@ -431,7 +431,7 @@ func (p *Proxy) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 
 func (p *Proxy) ListenAndServe() error {
 	addr := fmt.Sprintf("%s:%d", p.ListenAddr, p.ListenPort)
-	fmt.Println("Starting...")
+	fmt.Printf("Running on %s...\n", addr)
 	if p.TLSKeyPath != "" {
 		return http.ListenAndServeTLS(
 			addr,
@@ -446,9 +446,8 @@ func (p *Proxy) ListenAndServe() error {
 
 func main() {
 	proxy := Proxy{}
-	flags := flag.NewFlagSet("s3-basicauth-proxy", flag.ExitOnError)
-	proxy.AddFlags(flags)
-	flags.Parse(os.Args)
+	proxy.AddFlags(flag.CommandLine)
+	flag.Parse()
 	err := proxy.ListenAndServe()
 	if err != nil {
 		fmt.Println(err)
