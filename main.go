@@ -137,10 +137,12 @@ func makeServiceForward(endpoint, region string, creds *credentials) (serviceFor
 			},
 		})
 	}
+	// TODO: Cache clients
 	config := &aws.Config{
-		Endpoint:    &endpoint,
-		Region:      &region,
-		Credentials: awscreds,
+		Endpoint:         &endpoint,
+		Region:           &region,
+		Credentials:      awscreds,
+		S3ForcePathStyle: aws.Bool(true),
 	}
 	session, err := awssession.NewSession(config)
 	if err != nil {
