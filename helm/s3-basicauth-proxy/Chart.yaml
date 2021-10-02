@@ -1,0 +1,6 @@
+apiVersion: v2
+name: s3-basicauth-proxy
+description: Proxy for AWS S3 and S3-compatible services with Basic Authentication
+type: application
+version: 0.0.1
+appVersion: "0.0.1"

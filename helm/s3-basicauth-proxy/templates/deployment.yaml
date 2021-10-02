@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "s3-basicauth-proxy.fullname" . }}
+  labels:
+    {{- include "s3-basicauth-proxy.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "s3-basicauth-proxy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "s3-basicauth-proxy.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "s3-basicauth-proxy.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+          - -listen-addr=0.0.0.0
+          - '-listen-port={{ include "s3-basicauth-proxy.containerPort" .}}'
+          {{- if .Values.tlsSecret.name }}
+          - -tls-cert=/tls.crt
+          - -tls-key=/tls.key
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: '{{ include "s3-basicauth-proxy.containerPort" . }}'
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+              {{- if .Values.tlsSecret.name }}
+              scheme: HTTPS
+              {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+              {{- if .Values.tlsSecret.name }}
+              scheme: HTTPS
+              {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          {{- if .Values.tlsSecret.name }}
+          - name: tls
+            mountPath: /tls.crt
+            subPath: tls.crt
+          - name: tls
+            mountPath: /tls.key
+            subPath: tls.key
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      {{- if .Values.tlsSecret.name }}
+      - name: tls
+        secret:
+          secretName: '{{ .Values.tlsSecret.name }}'
+          items:
+          - path: tls.key
+            key: '{{ .Values.tlsSecret.keyKey }}'
+          - path: tls.crt
+            key: '{{ .Values.tlsSecret.certKey }}'
+      {{- end }}
