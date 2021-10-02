@@ -347,7 +347,10 @@ func (p *Proxy) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 			secretKey: password,
 		}
 	}
-
+	if req.URL.Path == "/" {
+		resp.Write([]byte("Proxy is running"))
+		return
+	}
 	if endpoint, region, matched := ParseServicePath(req.URL.Path); matched {
 		svc, err := makeServiceForward(endpoint, region, creds)
 		if err != nil {
