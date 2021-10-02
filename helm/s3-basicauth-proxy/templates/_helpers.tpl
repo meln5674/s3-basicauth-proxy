@@ -62,6 +62,4 @@ Create the name of the service account to use
 {{- end }}
 
 
-{{- define "s3-basicauth-proxy.containerPort" -}}
-{{- if .Values.tlsSecret.name }}8443{{ else }}8080{{ end }}
-{{- end -}}
+{{- define "s3-basicauth-proxy.containerPort" -}}{{ if .Values.tlsSecret.name }}8443{{ else }}8080{{ end }}{{- end -}}

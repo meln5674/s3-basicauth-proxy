@@ -42,7 +42,7 @@ spec:
           {{- end }}
           ports:
             - name: http
-              containerPort: '{{ include "s3-basicauth-proxy.containerPort" . }}'
+              containerPort: {{ include "s3-basicauth-proxy.containerPort" . }}
               protocol: TCP
           livenessProbe:
             httpGet:
